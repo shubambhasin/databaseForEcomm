@@ -1,10 +1,11 @@
 const mongoose = require('mongoose')
-const databaseUrl = process.env['mongooseUrl']
-')
+
+const mySecret = process.env['databaseUrl']
+
 const connectDatabase = async () => {
 
   try {
-    await mongoose.connect(databaseUrl, {
+    await mongoose.connect(mySecret, {
       useNewUrlParser: true,
       useUnifiedTopology: true
     })
@@ -16,4 +17,4 @@ const connectDatabase = async () => {
 
 }
 
-module.exports = {connectDatabase};
+module.exports = connectDatabase
