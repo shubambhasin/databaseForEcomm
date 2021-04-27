@@ -7,7 +7,14 @@ router.get('/', async (req, res) => {
 
   const products = await Product.find()
   console.log(products)
-  res.json({data: products})
+  res.send(products)
+})
+router.get('/:id', async (req, res) => {
+
+  const { id } = req.params
+  const product = await Product.findById(id)
+  res.send(product)
+
 })
 
 module.exports = router;

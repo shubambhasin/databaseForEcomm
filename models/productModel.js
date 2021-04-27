@@ -4,7 +4,6 @@ const productData = require('../database/productData.js')
 
 const productSchema = new Schema( {
 
-  id: Schema.Types.ObjectId,
   name: {
     type: String,
     required: true,
