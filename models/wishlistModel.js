@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const { Schema } = mongoose;
 const productData = require('../database/productData.js')
 
-const productSchema = new Schema( {
+const wishlistSchema = new Schema( {
 
   name: {
     type: String,
@@ -47,19 +47,6 @@ const productSchema = new Schema( {
   }
   })
 
-  const Product = mongoose.model("Product", productSchema)
+  const Wishlist = mongoose.model("wishlist", wishlistSchema)
 
-  const initializeProducts = async () => {
-    try {
-      productData.forEach( async (product) => {
-        const newProduct = new Product(product)
-        const savedProduct = await newProduct.save();
-        // console.log(savedProduct)
-      })
-    }
-    catch ( err ){
-console.log(err)
-    } 
-  }
-
-  module.exports = { Product, initializeProducts }
+  module.exports = { Wishlist, wishlistSchema }

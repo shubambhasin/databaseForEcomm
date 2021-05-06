@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const { Schema } = mongoose;
 const productData = require('../database/productData.js')
 
-const productSchema = new Schema( {
+const cartSchema = new Schema( {
 
   name: {
     type: String,
@@ -44,22 +44,23 @@ const productSchema = new Schema( {
   },
   availableQty: {
     type: Number
-  }
+  },
+  quantity: Number,
+  inCart: Boolean
   })
+ const Cart = mongoose.model("cart", cartSchema)
 
-  const Product = mongoose.model("Product", productSchema)
+//   const initializeProducts = async () => {
+//     try {
+//       productData.forEach( async (product) => {
+//         const newProduct = new Product(product)
+//         const savedProduct = await newProduct.save();
+//         // console.log(savedProduct)
+//       })
+//     }
+//     catch ( err ){
+// console.log(err)
+//     } 
+//   }
 
-  const initializeProducts = async () => {
-    try {
-      productData.forEach( async (product) => {
-        const newProduct = new Product(product)
-        const savedProduct = await newProduct.save();
-        // console.log(savedProduct)
-      })
-    }
-    catch ( err ){
-console.log(err)
-    } 
-  }
-
-  module.exports = { Product, initializeProducts }
+  module.exports = { Cart, cartSchema }
