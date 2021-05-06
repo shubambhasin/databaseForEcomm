@@ -24,7 +24,6 @@ mongoose.set('useCreateIndex', true);
 app.get('/', (req, res) => {
   res.send("I am a database")
 })
-
 app.use('/products', productRouter)
 app.use('/cart', cartRouter)
 app.use('/wishlist', wishlistRouter)
