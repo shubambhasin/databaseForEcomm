@@ -1,26 +1,51 @@
 const mongoose = require('mongoose')
 const { Schema } = mongoose;
+const bcrypt = require('bcrypt')
+const { isEmail } = require('validator')
 
-const signupSchema = new Schema( {
+const SignupSchema = new Schema( {
   name: {
     type: String,
-    required: true,
+    required: [true,"Please enter a name"]
   },
-   email: {
+  email: {
     type: String,
-    required: true,
-    dropDups: true,
-    unique: true 
+    required: [true, "Please enter email"],
+    unique: true,
+    validate: [isEmail, "Please enter an valid Email"]
   },
   password: {
       type: String,
-      minLength: 6,
-      maxLength: 12,
-      required: true
+       type: String,
+    minlength: [6,"password should be atleast of 6 characters"]
   }
 
 }, { timestamps: true})
 
-const Signup = mongoose.model('signup', signupSchema)
+SignupSchema.pre("save", async function(next){
+const salt = await bcrypt.genSalt()
+this.password = await bcrypt.hash(this.password, salt)
+next()
+})
 
-module.exports = { signupSchema, Signup }
+
+SignupSchema.statics.login = async function (email, password) {
+
+  const user = await this.findOne({ email })
+  if(user)
+  {
+    const result = await bcrypt.compare(password, user.password)
+    console.log(result)
+    if(result)
+    {
+      return user;
+    }
+    throw Error("Password incorrect")
+  }
+  throw Error("Email not registered")
+
+}
+
+const Signup = mongoose.model('signup', SignupSchema)
+
+module.exports = { SignupSchema, Signup }

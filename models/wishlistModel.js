@@ -4,48 +4,20 @@ const productData = require('../database/productData.js')
 
 const wishlistSchema = new Schema( {
 
-  name: {
-    type: String,
-    required: true,
+ userId: {
+    type: Schema.Types.ObjectId,
+    ref: 'signup'
   },
-  image: {
-    type: String,
-    required: true
-  },
-  price: {
-    type: Number
-  },
-  category: {
-    type: String
-  },
-  brand: {
-    type: String
-  },
-  isPopular: {
-    type: Boolean
-  },
-  isNewest: {
-    type: Boolean
-  },
-  inStock: {
-    type: Boolean
-  },
-  fastDelivery: {
-    type: Boolean
-  },
-  rating: {
-    type: Number
-  },
-  offer: {
-    type: Number
-  },
-  totalPurchase: {
-    type: Number
-  },
-  availableQty: {
-    type: Number
-  }
+  wishlistItems: [
+     {
+       product: {
+        type: Schema.Types.ObjectId,
+        ref: "product"
+      }
+     }
+    ],
   })
+ 
 
   const Wishlist = mongoose.model("wishlist", wishlistSchema)
 

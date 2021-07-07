@@ -47,7 +47,7 @@ const productSchema = new Schema( {
   }
   })
 
-  const Product = mongoose.model("Product", productSchema)
+  const Product = mongoose.model("product", productSchema)
 
   const initializeProducts = async () => {
     try {
