@@ -5,11 +5,8 @@ const { decodeUserId } = require('../utils/decodeUserId.js')
 
 
 const AddToCart = async (userId, product, Cart, res) => {
-
   const cart = await Cart.find({ userId })
-  console.log("line 10", cart)
-  console.log(product)
- try{
+  try{
    if(cart.length === 0)
   {
     const newCart = new Cart({
@@ -20,21 +17,21 @@ const AddToCart = async (userId, product, Cart, res) => {
       }],
     })
     await newCart.save()
-    const result = await Cart.findById({userId}).populate({
+    const result = await Cart.find({userId}).populate({
       path: "cartItems.product",
       model: "product"
     })
-   return res.json({result})
-
+   return res.json({success: true, result})
+  console.log("Added to cart")
   }
   else{
-    const itemAlreadyPresent = cart[0].cartItems.map(item => item.product === product._id)
+    // const itemAlreadyPresent = cart[0].cartItems.includes(product._id)
+    const itemAlreadyPresent = cart[0].cartItems.filter((data) => data.product == product._id)
     console.log("line 49", itemAlreadyPresent)
-    if(itemAlreadyPresent.length === 0 )
+    if(itemAlreadyPresent.length !== 0 )
     {
-
       console.log("Item already present")
-
+      res.status(400).json({success: false, message: "Item already in cart"})
     }
     else{
       console.log("item not present")
@@ -47,15 +44,13 @@ const AddToCart = async (userId, product, Cart, res) => {
           }}
       })
       console.log("line 70", update)
-      console.log("Cart updated")
+      console.log("Cart updated, line 47")
     }
       const result = await Cart.find({ userId}).populate({
         path: "product.productId",
         model: "product"
       })
       return res.json({result})
-
-
   }
  } catch(error)
  {
@@ -93,32 +88,46 @@ const deleteProduct = async (userId, cartId, productId, res) => {
   }
 }
 
-const increaseQuantity = async (userId, cartId, productId, res) => {
 
-  try{
-    const cart = await Cart.find({ userId })
-      if(cart.length === 0)
-      {
-       return res.status(404).json({success: false, message: "User do not exist"})
-      }
-      else{
-         const result = await Cart.findByIdAndUpdate({ 
-         _id: cartId 
-      },
-      {
-        $push: {
-          cartItems: {
-                _id: productId
-          }
-        }
+const increaseQuantity = async (userId, cartId, product, productId, res) => {
+        try{
+         const update1 = await Cart.findByIdAndUpdate({_id:cartId}, {
+          $pull: { 
+            cartItems: {     
+                product: productId              
+            }}
       })
-      console.log("item Deleted from")
-      return res.status(200).json({success: true, message: "Item removed from cart successfully"})
-      }
-  }catch(error)
-  {
-    res.status(400).json({success: false, error})
-  }
+          const update2 = await Cart.findByIdAndUpdate({_id:cartId}, {
+          $push: { 
+            cartItems: {
+              quantity: product.quantity+1,
+                product: productId              
+            }}
+      })
+      res.status(200).json({success: true, result: update2})
+        }catch(error){
+          res.json({error})
+        }
+}
+const decreaseQuantity = async (userId, cartId, product, productId, res) => {
+        try{
+         const update1 = await Cart.findByIdAndUpdate({_id:cartId}, {
+          $pull: { 
+            cartItems: {     
+                product: productId              
+            }}
+      })
+          const update2 = await Cart.findByIdAndUpdate({_id:cartId}, {
+          $push: { 
+            cartItems: {
+              quantity: product.quantity-1,
+                product: productId              
+            }}
+      })
+      res.status(200).json({success: true, result: update2})
+        }catch(error){
+          res.json({error})
+        }
 }
 
 router.route("/").
@@ -143,32 +152,22 @@ catch(error)
   const product = req.body
   const token = req.headers.authorization
   const userId = decodeUserId(token)
-  // const savedItem = new Cart(data)
-  // await savedItem.save()
-  // res.json({success: true, product: savedItem })
   console.log("Data from client", product )
   console.log("User id", userId)
   AddToCart(userId, product, Cart, res)
-  
-
 })
 
 // clear whole cart
 
 router.route('/')
 .delete( async (req, res) => {
-
   try{
      const token = req.headers.authorization
     const userId = decodeUserId(token)
 
       const  response =  await Cart.deleteOne({userId})
       console.log(response)
-    // RemoveFromWishlist(userId, wishlistProductId, res)
-    // await Wishlist.findById(wishlistProductId).remove()
-
-  // await Wishlist.findByIdAndDelete(wishlistProductId)
-
+ 
   res.status(200).send({success: true})
  }
  catch(error)
@@ -182,6 +181,26 @@ router.route('/')
 
 router
 .route("/:productId")
+.post( async (req, res) => {
+
+  const token = req.headers.authorization
+  const product = req.body
+ try{
+    const {productId} = req.params
+    const userId = decodeUserId(token)
+    const user = await Cart.find({userId})
+    const cartId = user[0]._id
+    console.log(productId)
+    increaseQuantity(userId, cartId, product, productId, res)
+
+    res.status(200).send({success: true})
+ }
+ catch(error)
+ {
+   res.status(400).send({ success: false, error: "cannot delete :("})
+ }
+
+})
 .delete( async( req, res) => {
 
   const token = req.headers.authorization

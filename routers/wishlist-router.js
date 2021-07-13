@@ -1,12 +1,14 @@
 const express = require('express')
 const router = express.Router()
 const { Wishlist } = require('../models/wishlistModel')
+const { Cart } = require('../models/cartModel')
 const { decodeUserId } = require('../utils/decodeUserId.js')
+const  deleteProduct = require('../utils/deleteProduct')
 const ObjectId = require('mongodb').ObjectID;
 
 const AddToWishlist = async (userId, product, res) => {
-
   const wishlist = await Wishlist.find({ userId })
+  console.log("wihslist line 10",wishlist)
   try {
     if (wishlist.length === 0) {
       const newWishlist = new Wishlist({
@@ -16,13 +18,25 @@ const AddToWishlist = async (userId, product, res) => {
         }]
       })
       await newWishlist.save()
-      const result = await Wishlist.findById({ userId })
-      res.json({ success: true, result })
+      const result = await Wishlist.findById({ _id: userId }).populate({
+        path: "wishlistItems.product",
+        model: "product"
+      })
+      //also removes from the cart when moved to wishlist
+      const user = await Cart.find({userId})
+      const cartId = user[0]._id
+      const removedFromCartAsWell = deleteProduct(userId,cartId, product._id, res)
+      res.json({ success: true, result, removedFromCartAsWell})
     }
     else {
-      const itemAlreadyPresent = wishlist[0].wishlistItems.includes(product._id)
-      if (itemAlreadyPresent) {
+      // const itemAlreadyPresent = wishlist[0].wishlistItems.includes(product)
+      const itemAlreadyPresents = wishlist[0].wishlistItems[0]
+      const itemAlreadyPresent = wishlist[0].wishlistItems.filter((data) => data.product == product._id)
+      console.log("line 42", itemAlreadyPresents)
+      console.log("line 43 Item already present ? ",itemAlreadyPresent)
+      if (itemAlreadyPresent.length !== 0) {
             console.log("Item already present")
+            res.status(401).json({success: false, message: "Item already in wishlist"})
       }
       else {
         await Wishlist.findByIdAndUpdate(wishlist[0]._id, {
@@ -33,18 +47,17 @@ const AddToWishlist = async (userId, product, res) => {
            }
         })
       }
-      const result = await Wishlist.find({ userId }).populate('wishlistItems')
+      const result = await Wishlist.find({ userId }).populate({
+        path: "wishlistItems.product",
+        model: "product"
+      })
       res.json({ success: true, result })
-
-
     }
   } catch (error) {
     console.log(error)
     res.json({ success: false, error: error.message })
   }
 }
-
-
 const RemoveFromWishlist = async (userId, productId, wishlistId, res) => {
 
   try {
@@ -63,7 +76,6 @@ const RemoveFromWishlist = async (userId, productId, wishlistId, res) => {
             }
           }
         })
-      console.log("item Deleted from")
       res.status(200).json({ success: true, message: "Item removed from wishlist successfully" })
     }
   }
@@ -86,15 +98,14 @@ router.route("/")
     catch (error) {
       res.send(error)
     }
-
-
-  })
+})
   .post(async (req, res) => {
     try {
 
       const product = req.body
       const token = req.headers.authorization
       const userId = decodeUserId(token)
+      console.log("Product from client", product)
       AddToWishlist(userId, product, res)
     } catch (error) {
       res.json({ error: error }
@@ -106,10 +117,8 @@ router
   .route("/")
   .delete(async (req, res) => {
     try {
-      // const {wishlistProductId} = req.params
       const token = req.headers.authorization
       const userId = decodeUserId(token)
-
       const response = await Wishlist.deleteOne({ userId })
       console.log(response)
       // RemoveFromWishlist(userId, wishlistProductId, res)
